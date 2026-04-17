@@ -17,7 +17,18 @@ cd /mnt/shared-storage-user/ai4good1-share/yimin/models/gorilla/berkeley-functio
 pip install -e .[oss_eval_vllm] -i http://mirrors.i.h.pjlab.org.cn/pypi/simple/ --trusted-host mirrors.i.h.pjlab.org.cn
 ```
 
-## 2. 生成模型响应
+## 2. 跑本地模型前先清理环境变量
+
+避免残留的远端 endpoint 配置干扰本地 vLLM 启动：
+
+```bash
+unset REMOTE_OPENAI_BASE_URL
+unset REMOTE_OPENAI_API_KEY
+unset REMOTE_OPENAI_TOKENIZER_PATH
+unset OPENAI_BASE_URL
+```
+
+## 3. 生成模型响应
 
 ### FC 模式（Function Calling）
 
@@ -43,7 +54,7 @@ bfcl generate \
   --local-model-path /mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/asb-safety-fixed
 ```
 
-## 3. 评估结果
+## 4. 评估结果
 
 ```bash
 # FC 模式评估
@@ -57,7 +68,7 @@ bfcl evaluate \
   --test-category all
 ```
 
-## 4. 查看结果
+## 5. 查看结果
 
 评分文件保存在 `score/` 目录下：
 
