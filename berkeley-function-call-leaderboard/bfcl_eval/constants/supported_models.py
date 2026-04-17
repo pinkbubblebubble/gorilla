@@ -186,5 +186,9 @@ SUPPORTED_MODELS = [
     "qwen/qwq-32b-novita",
     "qwen3-4b-think-FC",
     "qwen3-4b-nothink-FC",
+    "qwen3-4b-sft-full-training-FC",
+    "qwen3-4b-sft-full-training",
+    "qwen3-4b-sft-helpfulness-only-FC",
+    "qwen3-4b-sft-helpfulness-only",
     "DM-Cito-32B-v1",
 ]
