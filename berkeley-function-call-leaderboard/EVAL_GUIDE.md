@@ -33,7 +33,16 @@ cd /mnt/shared-storage-user/ai4good1-share/yimin/models/gorilla/berkeley-functio
 pip install -e .[oss_eval_vllm] -i http://mirrors.i.h.pjlab.org.cn/pypi/simple/ --trusted-host mirrors.i.h.pjlab.org.cn
 ```
 
-## 2. 跑本地模型前先清理环境变量
+## 2. 设置工作目录（避免权限冲突）
+
+如果 `.file_locks/` 目录是 root 创建的，普通用户会遇到 `PermissionError`。
+通过环境变量把所有输出（result、score、lock 文件）重定向到自己的目录：
+
+```bash
+export BFCL_PROJECT_ROOT=/mnt/shared-storage-user/ai4good1-share/yimin/bfcl_workspace
+```
+
+## 3. 跑本地模型前先清理环境变量
 
 避免残留的远端 endpoint 配置干扰本地 vLLM 启动：
 
@@ -50,7 +59,7 @@ unset all_proxy
 unset ALL_PROXY
 ```
 
-## 3. 生成模型响应
+## 4. 生成模型响应
 
 ### FC 模式（Function Calling）
 
@@ -76,7 +85,7 @@ bfcl generate \
   --local-model-path /mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/asb-safety-fixed
 ```
 
-## 4. 评估结果
+## 5. 评估结果
 
 ```bash
 # FC 模式评估
@@ -90,7 +99,7 @@ bfcl evaluate \
   --test-category all
 ```
 
-## 5. 查看结果
+## 6. 查看结果
 
 评分文件保存在 `score/` 目录下：
 
