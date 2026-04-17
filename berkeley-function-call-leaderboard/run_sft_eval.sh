@@ -10,6 +10,21 @@ unset REMOTE_OPENAI_BASE_URL REMOTE_OPENAI_API_KEY REMOTE_OPENAI_TOKENIZER_PATH 
 
 MODEL_PATH_BASE=/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full
 
+# 修复 SFT 模型 tokenizer_config.json 中 extra_special_tokens 为 list 的问题
+for model_path in "$MODEL_PATH_BASE/full-training-20260416" "$MODEL_PATH_BASE/helpfulness-only-20260416"; do
+    python3 -c "
+import json
+path = '$model_path/tokenizer_config.json'
+with open(path) as f:
+    cfg = json.load(f)
+if isinstance(cfg.get('extra_special_tokens'), list):
+    cfg['extra_special_tokens'] = {}
+    with open(path, 'w') as f:
+        json.dump(cfg, f, indent=2, ensure_ascii=False)
+    print('Patched tokenizer_config.json:', path)
+"
+done
+
 run_eval() {
     local model_key=$1
     local model_path=$2
