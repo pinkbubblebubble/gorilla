@@ -9,6 +9,7 @@ unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
 unset REMOTE_OPENAI_BASE_URL REMOTE_OPENAI_API_KEY REMOTE_OPENAI_TOKENIZER_PATH OPENAI_BASE_URL
 
 MODEL_PATH_BASE=/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full
+VLLM_PORT=8000
 
 # 修复 SFT 模型 tokenizer_config.json 中 extra_special_tokens 为 list 的问题
 for model_path in "$MODEL_PATH_BASE/full-training-20260416" "$MODEL_PATH_BASE/helpfulness-only-20260416"; do
@@ -34,17 +35,40 @@ run_eval() {
     echo "Path: $model_path"
     echo "========================================"
 
+    # 启动 vLLM server
+    echo "Starting vLLM server on port $VLLM_PORT..."
+    vllm serve "$model_path" \
+        --port $VLLM_PORT \
+        --tensor-parallel-size 1 \
+        --trust-remote-code &
+    VLLM_PID=$!
+
+    # 等待 server 就绪
+    echo "Waiting for vLLM server to be ready..."
+    until curl -s "http://localhost:$VLLM_PORT/health" > /dev/null 2>&1; do
+        sleep 5
+    done
+    echo "vLLM server is ready."
+
+    # 指向外部 server
+    export REMOTE_OPENAI_BASE_URL="http://localhost:$VLLM_PORT/v1"
+    export REMOTE_OPENAI_TOKENIZER_PATH="$model_path"
+
     bfcl generate \
         --model "$model_key" \
         --test-category all \
         --backend vllm \
-        --num-gpus 1 \
-        --gpu-memory-utilization 0.9 \
-        --local-model-path "$model_path"
+        --skip-server-setup
 
     bfcl evaluate \
         --model "$model_key" \
         --test-category all
+
+    # 关闭 vLLM server
+    echo "Shutting down vLLM server..."
+    kill $VLLM_PID
+    wait $VLLM_PID 2>/dev/null || true
+    unset REMOTE_OPENAI_BASE_URL REMOTE_OPENAI_TOKENIZER_PATH
 }
 
 run_eval "qwen3-4b-sft-full-training-FC"    "$MODEL_PATH_BASE/full-training-20260416"
