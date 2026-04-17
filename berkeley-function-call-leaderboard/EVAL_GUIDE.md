@@ -2,6 +2,18 @@
 
 ## ⚠️ 已知问题
 
+### vLLM 0.8.5 + transformers 版本冲突
+
+报错：`TypeError: non-default argument 'vision_config' follows default argument`
+
+transformers 4.50+ 改了 `PretrainedConfig`，导致 vLLM 0.8.5 的 `DeepseekVLV2Config` 崩溃。fix：
+
+```bash
+pip install transformers==4.49.0 -i http://mirrors.i.h.pjlab.org.cn/pypi/simple/ --trusted-host mirrors.i.h.pjlab.org.cn
+```
+
+### 不可用的 rlaunch 镜像
+
 以下 rlaunch 镜像（`ml-base:20.04`）跑评测时问题较多，**不要使用**：
 
 ```bash
