@@ -1,5 +1,21 @@
 # 本地模型 BFCL 评测指南
 
+## ⚠️ 已知问题
+
+以下 rlaunch 镜像（`ml-base:20.04`）跑评测时问题较多，**不要使用**：
+
+```bash
+# 不要用这个
+rlaunch --namespace=ailab-safevlagent \
+  --charged-group safevlagent_gpu \
+  --private-machine=group \
+  --gpu 1 --cpu 8 --memory 32768 \
+  --image registry.h.pjlab.org.cn/library/ml-base:20.04 \
+  --mount=gpfs://gpfs1/ai4good1-share:/mnt/shared-storage-user/ai4good1-share \
+  --mount=gpfs://gpfs2/gpfs2-shared-public:/mnt/shared-storage-gpfs2/gpfs2-shared-public \
+  -- bash
+```
+
 ## 环境信息
 
 - 集群：H集群 worker 节点
