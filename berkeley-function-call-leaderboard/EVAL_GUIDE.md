@@ -137,6 +137,34 @@ bfcl generate \
 
 `run_sft_eval.sh` 已经把 `--local-model-path "$model_path"` 加进去了，跑脚本无需额外处理。
 
+### 2.5 SFT checkpoint `extra_special_tokens=[]` 与 transformers ≥4.51 不兼容
+
+报错（vLLM 启动 tokenizer 时崩在 transformers 内部）：
+
+```
+File ".../transformers/tokenization_utils_base.py", line 1190, in _set_model_specific_special_tokens
+    self.SPECIAL_TOKENS_ATTRIBUTES = self.SPECIAL_TOKENS_ATTRIBUTES + list(special_tokens.keys())
+AttributeError: 'list' object has no attribute 'keys'
+```
+
+**根因**：
+
+- `extra_special_tokens` 在 transformers 里被声明为 `Optional[dict[str, str]]`，4.51 新加的 `_set_model_specific_special_tokens` 直接 `.keys()`，没做类型兜底
+- LLaMA-Factory 之类的 SFT 框架在 `save_pretrained` 时会把这个字段写成 `"extra_special_tokens": []`（空 list），不是 `{}` —— **写时宽松，读时严格**
+- 原版 Qwen3 的 `tokenizer_config.json` 根本没这个字段（缺省 = `None`），所以预训练模型不踩，**只有 SFT 后才踩**
+
+**验证某个 checkpoint 是否有这个问题**（替换路径，单行避免 shell 拆行）：
+
+```bash
+python3 -c "import json,sys; cfg=json.load(open(sys.argv[1])); print(type(cfg.get('extra_special_tokens')).__name__, '=', cfg.get('extra_special_tokens'))" /path/to/model/tokenizer_config.json
+```
+
+输出 `list = []` → 需要 patch；输出 `dict = {}` 或 `NoneType = None` → 没事。
+
+**修复**：`run_sft_eval.sh` 的 `run_eval` 里已经内置一段幂等的 in-place patch，每次启动 vLLM 前自动把 `extra_special_tokens=[]` 改成 `{}` 写回磁盘。改回 `dict` **不影响模型回答质量** —— 空 list 和空 dict 语义等价（都是「没有额外特殊 token」），真正的特殊 token（`<|im_start|>` 等）存放在 `added_tokens_decoder` / `additional_special_tokens` 等其它字段里。
+
+**治本**：去 LLaMA-Factory 的 tokenizer 保存逻辑里把 `extra_special_tokens=[]` 改成 `{}`（或者 `del` 掉走 `None` 默认值），以后训出来的 checkpoint 就不用再 patch。
+
 ### 2.x 通用恢复流程
 
 上面任何一类错误导致 result 被写入错误条目后，**必须先清 result 再重跑**。BFCL `generate` 是续跑模式：已经在 result 文件里的 test ID 会被跳过，不论记录是真输出还是错误：
