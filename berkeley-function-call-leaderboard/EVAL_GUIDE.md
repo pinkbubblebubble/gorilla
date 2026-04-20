@@ -2,6 +2,48 @@
 
 本指南对应 `run_sft_eval.sh` 的工作方式：**vLLM 作为独立 server 启动，bfcl 通过 `--skip-server-setup` 连接现成的 OpenAI-compatible endpoint**。
 
+## 0. 训练 SFT checkpoint（产出待 eval 的模型）
+
+训练镜像：`registry.h.pjlab.org.cn/ailab-safevlagent-safevlagent_gpu/asb:20260418214325-bfcl`
+
+### 0.1 rlaunch interactive（调试用，1 卡）
+
+```bash
+rlaunch --namespace=ailab-ai4good1 \
+  --charged-group ai4good1_gpu \
+  --private-machine=group \
+  --gpu 1 --cpu 8 --memory 32768 \
+  --image registry.h.pjlab.org.cn/ailab-safevlagent-safevlagent_gpu/asb:20260418214325-bfcl \
+  --mount=gpfs://gpfs1/ai4good1-share:/mnt/shared-storage-user/ai4good1-share \
+  --mount=gpfs://gpfs2/gpfs2-shared-public:/mnt/shared-storage-gpfs2/gpfs2-shared-public \
+  -- bash
+```
+
+进入容器后：
+
+```bash
+cd /mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu
+NPROC_PER_NODE=1 bash training/llamafactory/train_20260419.sh
+```
+
+### 0.2 rjob submit（后台训练，1 卡）
+
+```bash
+rjob submit \
+  --namespace=ailab-ai4good1 \
+  --charged-group ai4good1_gpu \
+  --private-machine=group \
+  --gpu 1 --cpu 8 --memory 32768 \
+  --image registry.h.pjlab.org.cn/ailab-safevlagent-safevlagent_gpu/asb:20260418214325-bfcl \
+  --mount=gpfs://gpfs1/ai4good1-share:/mnt/shared-storage-user/ai4good1-share \
+  --mount=gpfs://gpfs2/gpfs2-shared-public:/mnt/shared-storage-gpfs2/gpfs2-shared-public \
+  -- bash -c "cd /mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu && NPROC_PER_NODE=1 bash training/llamafactory/train_20260419.sh"
+```
+
+训练产物会落到 `saves/qwen3-4b/full/<run-name>-<date>/`，eval 时把这个路径填到 `run_sft_eval.sh` 的 `run_eval` 行即可。
+
+---
+
 ## 环境
 
 - 集群：H 集群 worker 节点（Python 3.12，root 用户）
