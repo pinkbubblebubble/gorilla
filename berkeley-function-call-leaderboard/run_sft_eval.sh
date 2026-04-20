@@ -58,7 +58,7 @@ run_eval() {
     unset REMOTE_OPENAI_BASE_URL REMOTE_OPENAI_TOKENIZER_PATH
 }
 
-run_eval "qwen3-4b-sft-full-training-FC"    "$MODEL_PATH_BASE/full-training-20260416"
+# run_eval "qwen3-4b-sft-full-training-FC"    "$MODEL_PATH_BASE/full-training-20260416"
 # run_eval "qwen3-4b-sft-helpfulness-only-FC" "$MODEL_PATH_BASE/helpfulness-only-20260416"
 run_eval "qwen3-4b-sft-merged-FC"           "$MODEL_PATH_BASE/merged-20260419"
 run_eval "qwen3-4b-sft-safety-only-FC"      "$MODEL_PATH_BASE/safety-only-20260419"
