@@ -190,5 +190,9 @@ SUPPORTED_MODELS = [
     "qwen3-4b-sft-full-training",
     "qwen3-4b-sft-helpfulness-only-FC",
     "qwen3-4b-sft-helpfulness-only",
+    "qwen3-4b-sft-merged-FC",
+    "qwen3-4b-sft-merged",
+    "qwen3-4b-sft-safety-only-FC",
+    "qwen3-4b-sft-safety-only",
     "DM-Cito-32B-v1",
 ]

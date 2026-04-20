@@ -60,5 +60,7 @@ run_eval() {
 
 run_eval "qwen3-4b-sft-full-training-FC"    "$MODEL_PATH_BASE/full-training-20260416"
 # run_eval "qwen3-4b-sft-helpfulness-only-FC" "$MODEL_PATH_BASE/helpfulness-only-20260416"
+run_eval "qwen3-4b-sft-merged-FC"           "$MODEL_PATH_BASE/merged-20260419"
+run_eval "qwen3-4b-sft-safety-only-FC"      "$MODEL_PATH_BASE/safety-only-20260419"
 
 echo "All done! Results in $BFCL_PROJECT_ROOT/score/"
