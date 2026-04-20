@@ -21,6 +21,19 @@ run_eval() {
     echo "Path: $model_path"
     echo "========================================"
 
+    # 修复 SFT 导出脚本写出的 extra_special_tokens=[]（transformers >=4.51 要求 dict）
+    python3 -c "
+import json
+path = '$model_path/tokenizer_config.json'
+with open(path) as f:
+    cfg = json.load(f)
+if isinstance(cfg.get('extra_special_tokens'), list):
+    cfg['extra_special_tokens'] = {}
+    with open(path, 'w') as f:
+        json.dump(cfg, f, indent=2, ensure_ascii=False)
+    print('Patched tokenizer_config.json:', path)
+"
+
     # 启动 vLLM server
     echo "Starting vLLM server on port $VLLM_PORT..."
     vllm serve "$model_path" \
