@@ -194,5 +194,9 @@ SUPPORTED_MODELS = [
     "qwen3-4b-sft-merged",
     "qwen3-4b-sft-safety-only-FC",
     "qwen3-4b-sft-safety-only",
+    "qwen3-4b-sft-merged-20260420-FC",
+    "qwen3-4b-sft-merged-20260420",
+    "qwen3-4b-sft-4dataset-merged-FC",
+    "qwen3-4b-sft-4dataset-merged",
     "DM-Cito-32B-v1",
 ]
