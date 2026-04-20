@@ -205,6 +205,33 @@ python3 -c "import json; src='/mnt/shared-storage-user/ai4good1-share/yimin/ATbe
 
 预期：`Restored: /mnt/.../merged-20260419/tokenizer_config.json -> dict / 13`。验证用 2.5.1 节末尾的单文件检查命令。
 
+**已知受害者 checkpoint 列表**（commit `e2c0767` 在 4/16 用旧 patch 跑过这两个，token 大概率被抹空）：
+
+- `/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/full-training-20260416`
+- `/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/helpfulness-only-20260416`
+
+先验证 `full-training-20260416`：
+
+```bash
+python3 -c "import json; cfg=json.load(open('/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/full-training-20260416/tokenizer_config.json')); v=cfg['extra_special_tokens']; print(type(v).__name__, len(v) if hasattr(v,'__len__') else v)"
+```
+
+输出 `dict 0` → 跑下面这条恢复（从 `safety-only-20260419` 拷过来）：
+
+```bash
+python3 -c "import json; src='/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/safety-only-20260419/tokenizer_config.json'; dst='/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/full-training-20260416/tokenizer_config.json'; sc=json.load(open(src)); dc=json.load(open(dst)); dc['extra_special_tokens']=sc['extra_special_tokens']; json.dump(dc, open(dst,'w'), indent=2, ensure_ascii=False); print('Restored:', dst, '->', type(dc['extra_special_tokens']).__name__, '/', len(dc['extra_special_tokens']))"
+```
+
+`helpfulness-only-20260416` 同理（验证 + 恢复，把上面两条命令里的 `full-training-20260416` 全部替换成 `helpfulness-only-20260416`）：
+
+```bash
+python3 -c "import json; cfg=json.load(open('/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/helpfulness-only-20260416/tokenizer_config.json')); v=cfg['extra_special_tokens']; print(type(v).__name__, len(v) if hasattr(v,'__len__') else v)"
+```
+
+```bash
+python3 -c "import json; src='/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/safety-only-20260419/tokenizer_config.json'; dst='/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/helpfulness-only-20260416/tokenizer_config.json'; sc=json.load(open(src)); dc=json.load(open(dst)); dc['extra_special_tokens']=sc['extra_special_tokens']; json.dump(dc, open(dst,'w'), indent=2, ensure_ascii=False); print('Restored:', dst, '->', type(dc['extra_special_tokens']).__name__, '/', len(dc['extra_special_tokens']))"
+```
+
 > 🔁 **如果手头没有同家族的健康 checkpoint**，备用方案：把 13 个 Qwen2-VL token 直接写死回去（这套 token 集合是固定的）：
 >
 > ```bash
