@@ -165,6 +165,34 @@ python3 -c "import json,sys; cfg=json.load(open(sys.argv[1])); print(type(cfg.ge
 
 **修复**：`run_sft_eval.sh` 的 `run_eval` 里已经内置一段幂等的 in-place patch，每次启动 vLLM 前自动把 `extra_special_tokens` 从 `list` **保留式转换**成 `dict`（`[t1, t2, ...]` → `{t1: t1, t2: t2, ...}`），写回磁盘。这样既满足 transformers ≥4.51 的类型契约，又**完整保留所有 token 注册**，不影响模型回答质量。
 
+#### 2.5.1 手动 patch 单个 checkpoint（脚本未 pull / 想立即修）
+
+如果服务器没 `git pull` 到新版脚本，或者想在跑 eval 之前先手工修好两个 20260419 checkpoint，**每条单独粘**（路径写死，无变量、无循环、无换行，避免 shell 误拆）：
+
+```bash
+python3 -c "import json; path='/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/merged-20260419/tokenizer_config.json'; cfg=json.load(open(path)); v=cfg.get('extra_special_tokens'); cfg['extra_special_tokens']={t:t for t in v} if isinstance(v,list) else v; json.dump(cfg, open(path,'w'), indent=2, ensure_ascii=False); print('Done:', path, '->', type(cfg['extra_special_tokens']).__name__, '/', len(cfg['extra_special_tokens']) if isinstance(cfg['extra_special_tokens'],dict) else '')"
+```
+
+```bash
+python3 -c "import json; path='/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/safety-only-20260419/tokenizer_config.json'; cfg=json.load(open(path)); v=cfg.get('extra_special_tokens'); cfg['extra_special_tokens']={t:t for t in v} if isinstance(v,list) else v; json.dump(cfg, open(path,'w'), indent=2, ensure_ascii=False); print('Done:', path, '->', type(cfg['extra_special_tokens']).__name__, '/', len(cfg['extra_special_tokens']) if isinstance(cfg['extra_special_tokens'],dict) else '')"
+```
+
+每条预期输出：`Done: /mnt/.../tokenizer_config.json -> dict / 13`
+
+验证（同样路径写死）：
+
+```bash
+python3 -c "import json; cfg=json.load(open('/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/merged-20260419/tokenizer_config.json')); v=cfg['extra_special_tokens']; print(type(v).__name__, len(v))"
+```
+
+```bash
+python3 -c "import json; cfg=json.load(open('/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/safety-only-20260419/tokenizer_config.json')); v=cfg['extra_special_tokens']; print(type(v).__name__, len(v))"
+```
+
+两条都看到 `dict 13` 就说明 patch 成功，可以直接 `bash run_sft_eval.sh`。
+
+> ⚠️ 之前用 `for p in ...; do ... $p ...; done` 多行循环踩过坑：终端把 here-string 拆行后 `$p` 变量替换失败，命令会落到 `.../full//tokenizer_config.json` 那种空路径上，patch 看似执行实际没改任何文件。**要么用上面"路径写死、单行"版本，要么把 for 循环写到一个 `.sh` 文件里 `bash` 执行，不要直接粘到 prompt。**
+
 **治本**：去 LLaMA-Factory 的 tokenizer 保存逻辑里把 `extra_special_tokens=[]` 改成 `{}`（或者 `del` 掉走 `None` 默认值），以后训出来的 checkpoint 就不用再 patch。
 
 ### 2.x 通用恢复流程
