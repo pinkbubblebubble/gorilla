@@ -159,9 +159,11 @@ AttributeError: 'list' object has no attribute 'keys'
 python3 -c "import json,sys; cfg=json.load(open(sys.argv[1])); print(type(cfg.get('extra_special_tokens')).__name__, '=', cfg.get('extra_special_tokens'))" /path/to/model/tokenizer_config.json
 ```
 
-输出 `list = []` → 需要 patch；输出 `dict = {}` 或 `NoneType = None` → 没事。
+输出 `list = ...` → 需要 patch；输出 `dict = ...` 或 `NoneType = None` → 没事。
 
-**修复**：`run_sft_eval.sh` 的 `run_eval` 里已经内置一段幂等的 in-place patch，每次启动 vLLM 前自动把 `extra_special_tokens=[]` 改成 `{}` 写回磁盘。改回 `dict` **不影响模型回答质量** —— 空 list 和空 dict 语义等价（都是「没有额外特殊 token」），真正的特殊 token（`<|im_start|>` 等）存放在 `added_tokens_decoder` / `additional_special_tokens` 等其它字段里。
+> ⚠️ 实测 `merged-20260419` 的 list 不是空的，里面有 13 个真实 token（`<|im_start|>`、`<|im_end|>`、`<|vision_start|>` 等 Qwen2-VL 系列）。**不能直接 patch 成 `{}`**，那样会丢 token。
+
+**修复**：`run_sft_eval.sh` 的 `run_eval` 里已经内置一段幂等的 in-place patch，每次启动 vLLM 前自动把 `extra_special_tokens` 从 `list` **保留式转换**成 `dict`（`[t1, t2, ...]` → `{t1: t1, t2: t2, ...}`），写回磁盘。这样既满足 transformers ≥4.51 的类型契约，又**完整保留所有 token 注册**，不影响模型回答质量。
 
 **治本**：去 LLaMA-Factory 的 tokenizer 保存逻辑里把 `extra_special_tokens=[]` 改成 `{}`（或者 `del` 掉走 `None` 默认值），以后训出来的 checkpoint 就不用再 patch。
 
