@@ -193,6 +193,26 @@ python3 -c "import json; cfg=json.load(open('/mnt/shared-storage-user/ai4good1-s
 
 > ⚠️ 之前用 `for p in ...; do ... $p ...; done` 多行循环踩过坑：终端把 here-string 拆行后 `$p` 变量替换失败，命令会落到 `.../full//tokenizer_config.json` 那种空路径上，patch 看似执行实际没改任何文件。**要么用上面"路径写死、单行"版本，要么把 for 循环写到一个 `.sh` 文件里 `bash` 执行，不要直接粘到 prompt。**
 
+#### 2.5.2 恢复被旧 patch 抹空的 `extra_special_tokens`
+
+历史上 commit `42d624b` 的旧 patch 把 list 直接改成 `{}`，会**清空已注册的 13 个 Qwen2-VL token**（`<|im_start|>`、`<|im_end|>`、`<|vision_start|>` 等）。验证某个 checkpoint 是否被抹过：跑 2.5 节的验证命令，输出 `dict 0` 即是受害者；输出 `dict 13` 是健康的。
+
+恢复办法：从同 SFT 家族里**未受污染**的 checkpoint（13 个 token 都在）拷贝 `extra_special_tokens` 字段过来。下面以「从 `safety-only-20260419` 恢复 `merged-20260419`」为例（路径写死，单行）：
+
+```bash
+python3 -c "import json; src='/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/safety-only-20260419/tokenizer_config.json'; dst='/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/merged-20260419/tokenizer_config.json'; sc=json.load(open(src)); dc=json.load(open(dst)); dc['extra_special_tokens']=sc['extra_special_tokens']; json.dump(dc, open(dst,'w'), indent=2, ensure_ascii=False); print('Restored:', dst, '->', type(dc['extra_special_tokens']).__name__, '/', len(dc['extra_special_tokens']))"
+```
+
+预期：`Restored: /mnt/.../merged-20260419/tokenizer_config.json -> dict / 13`。验证用 2.5.1 节末尾的单文件检查命令。
+
+> 🔁 **如果手头没有同家族的健康 checkpoint**，备用方案：把 13 个 Qwen2-VL token 直接写死回去（这套 token 集合是固定的）：
+>
+> ```bash
+> python3 -c "import json; toks=['<|im_start|>','<|im_end|>','<|object_ref_start|>','<|object_ref_end|>','<|box_start|>','<|box_end|>','<|quad_start|>','<|quad_end|>','<|vision_start|>','<|vision_end|>','<|vision_pad|>','<|image_pad|>','<|video_pad|>']; path='/path/to/model/tokenizer_config.json'; cfg=json.load(open(path)); cfg['extra_special_tokens']={t:t for t in toks}; json.dump(cfg, open(path,'w'), indent=2, ensure_ascii=False); print('Restored:', path, '/ 13')"
+> ```
+
+**对 BFCL 影响评估**：实测纯文本 chat eval 影响很小 —— `<|im_start|>` / `<|im_end|>` 在 `added_tokens_decoder` 和 `additional_special_tokens` 里也有一份，chat 模板按字符串字面量匹配，token id 对得上就能正常对话；丢失的只是 transformers 的 named-attribute 注册（`tokenizer.im_start_token` 这种调用方式）。但能完整恢复就恢复，避免潜在差异。
+
 **治本**：去 LLaMA-Factory 的 tokenizer 保存逻辑里把 `extra_special_tokens=[]` 改成 `{}`（或者 `del` 掉走 `None` 默认值），以后训出来的 checkpoint 就不用再 patch。
 
 ### 2.x 通用恢复流程
