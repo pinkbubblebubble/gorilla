@@ -79,11 +79,9 @@ if isinstance(v, list):
     unset REMOTE_OPENAI_BASE_URL REMOTE_OPENAI_TOKENIZER_PATH
 }
 
-# run_eval "qwen3-4b-sft-full-training-FC"     "$MODEL_PATH_BASE/full-training-20260416"
-# run_eval "qwen3-4b-sft-helpfulness-only-FC"  "$MODEL_PATH_BASE/helpfulness-only-20260416"
-# run_eval "qwen3-4b-sft-merged-FC"            "$MODEL_PATH_BASE/merged-20260419"
-# run_eval "qwen3-4b-sft-safety-only-FC"       "$MODEL_PATH_BASE/safety-only-20260419"
-run_eval "qwen3-4b-sft-merged-20260420-FC"   "$MODEL_PATH_BASE/merged-20260420"
-run_eval "qwen3-4b-sft-4dataset-merged-FC"   "$MODEL_PATH_BASE/4dataset-merged-20260420"
+# run_eval "qwen3-4b-sft-full-training-FC"    "$MODEL_PATH_BASE/full-training-20260416"
+# run_eval "qwen3-4b-sft-helpfulness-only-FC" "$MODEL_PATH_BASE/helpfulness-only-20260416"
+run_eval "qwen3-4b-sft-merged-FC"           "$MODEL_PATH_BASE/merged-20260420"
+# run_eval "qwen3-4b-sft-safety-only-FC"      "$MODEL_PATH_BASE/safety-only-20260419"
 
 echo "All done! Results in $BFCL_PROJECT_ROOT/score/"
