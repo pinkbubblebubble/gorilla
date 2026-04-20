@@ -308,38 +308,70 @@ bash run_sft_eval.sh
 
 ---
 
-## 6. 断点续跑（bfcl 失败但 vLLM 还活着）
+## 6. 断点续跑（Ctrl+C 或 bfcl 失败后接着跑）
 
-vLLM 冷启动很贵，如果 `bfcl generate` 报错但 vLLM server 仍在运行，**不要重跑整个脚本**，手动续跑：
+`bfcl generate` 是**续跑模式**：result 文件里已有的 test ID 自动跳过，不重做。所以中断 + 重跑是安全的，唯一要避免的是 vLLM 冷启动（2–3 分钟）被白白多跑。
+
+### 6.1 先判断 vLLM 状态
 
 ```bash
-# 1. 确认 vLLM 还活着
 curl -s http://localhost:8000/health && echo " still up" || echo " already down"
-
-# 2. 导入环境变量
-export REMOTE_OPENAI_BASE_URL="http://localhost:8000/v1"
-export REMOTE_OPENAI_TOKENIZER_PATH="/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/full-training-20260416"
-
-# 3. 重跑 bfcl（注意加 --local-model-path 避免 model name 不匹配 404）
-bfcl generate \
-  --model qwen3-4b-sft-full-training-FC \
-  --test-category all \
-  --backend vllm \
-  --skip-server-setup \
-  --local-model-path /mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/full-training-20260416
-
-bfcl evaluate \
-  --model qwen3-4b-sft-full-training-FC \
-  --test-category all \
-  --partial-eval
 ```
 
-跑完当前模型后再 kill vLLM，换下一个：
+- **still up** → 走 6.2 手动续跑（推荐，不重启 server）
+- **already down** → 走 6.3 重跑整个脚本（接受冷启动开销）
+
+### 6.2 vLLM 还活着：手动续跑
+
+跑当前正在评的模型即可，path / model key 二选一替换。下面三条按顺序粘（**`merged-20260419` 版本**）：
+
+```bash
+export REMOTE_OPENAI_BASE_URL="http://localhost:8000/v1"
+export REMOTE_OPENAI_TOKENIZER_PATH="/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/merged-20260419"
+export TEST_CATEGORIES="simple_python,simple_java,simple_javascript,multiple,parallel,parallel_multiple,irrelevance,live_simple,live_multiple,live_parallel,live_parallel_multiple,live_irrelevance,live_relevance,multi_turn_base,multi_turn_miss_func,multi_turn_miss_param,multi_turn_long_context,memory_kv,memory_rec_sum,web_search_base,web_search_no_snippet,format_sensitivity"
+```
+
+```bash
+bfcl generate --model qwen3-4b-sft-merged-FC --test-category "$TEST_CATEGORIES" --backend vllm --skip-server-setup --local-model-path /mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/merged-20260419
+```
+
+```bash
+bfcl evaluate --model qwen3-4b-sft-merged-FC --test-category "$TEST_CATEGORIES" --partial-eval
+```
+
+**`safety-only-20260419` 版本**（同样三条按顺序粘）：
+
+```bash
+export REMOTE_OPENAI_BASE_URL="http://localhost:8000/v1"
+export REMOTE_OPENAI_TOKENIZER_PATH="/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/safety-only-20260419"
+export TEST_CATEGORIES="simple_python,simple_java,simple_javascript,multiple,parallel,parallel_multiple,irrelevance,live_simple,live_multiple,live_parallel,live_parallel_multiple,live_irrelevance,live_relevance,multi_turn_base,multi_turn_miss_func,multi_turn_miss_param,multi_turn_long_context,memory_kv,memory_rec_sum,web_search_base,web_search_no_snippet,format_sensitivity"
+```
+
+```bash
+bfcl generate --model qwen3-4b-sft-safety-only-FC --test-category "$TEST_CATEGORIES" --backend vllm --skip-server-setup --local-model-path /mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full/safety-only-20260419
+```
+
+```bash
+bfcl evaluate --model qwen3-4b-sft-safety-only-FC --test-category "$TEST_CATEGORIES" --partial-eval
+```
+
+跑完一个模型后 kill 旧 vLLM 再起下一个：
 
 ```bash
 pgrep -af "vllm serve"
-kill <PID>
 ```
+
+```bash
+kill <上一条命令打印的 PID>
+```
+
+### 6.3 vLLM 死了：重跑脚本
+
+```bash
+bash run_sft_eval.sh
+```
+
+会按顺序对脚本里没注释掉的所有 model 重新走 vLLM 冷启动 + generate + evaluate。**已完成的 test ID 会被 generate 跳过**，所以即使从头开始也不会重复推理，唯一损失是每个 model 多 2–3 分钟冷启动。
 
 ---
 
