@@ -37,7 +37,7 @@ rjob submit \
   --image registry.h.pjlab.org.cn/ailab-safevlagent-safevlagent_gpu/asb:20260418214325-bfcl \
   --mount=gpfs://gpfs1/ai4good1-share:/mnt/shared-storage-user/ai4good1-share \
   --mount=gpfs://gpfs2/gpfs2-shared-public:/mnt/shared-storage-gpfs2/gpfs2-shared-public \
-  -- bash -c "cd /mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu && NPROC_PER_NODE=1 bash training/llamafactory/train_20260419.sh"
+  -- bash -c "cd /mnt/shared-storage-user/ai4good1-share/yimin/models/gorilla/berkeley-function-call-leaderboard && NPROC_PER_NODE=1 bash run_sft_eval.sh"
 ```
 
 训练产物会落到 `saves/qwen3-4b/full/<run-name>-<date>/`，eval 时把这个路径填到 `run_sft_eval.sh` 的 `run_eval` 行即可。
