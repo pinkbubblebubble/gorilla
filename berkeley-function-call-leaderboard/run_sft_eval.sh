@@ -11,10 +11,10 @@ unset REMOTE_OPENAI_BASE_URL REMOTE_OPENAI_API_KEY REMOTE_OPENAI_TOKENIZER_PATH 
 MODEL_PATH_BASE=/mnt/shared-storage-user/ai4good1-share/yimin/ATbench_Engine_luohaoyu/saves/qwen3-4b/full
 VLLM_PORT=8000
 
-# 显式列出 all 的所有分类，去掉 memory_vector
+# 显式列出 all 的所有分类，去掉 memory_vector 和 web_search_*
 # （memory_vector 在 worker 节点上无法访问 HF 下载 all-MiniLM-L6-v2）
-# 若没配 SerpAPI，可额外去掉 web_search_base,web_search_no_snippet
-TEST_CATEGORIES="simple_python,simple_java,simple_javascript,multiple,parallel,parallel_multiple,irrelevance,live_simple,live_multiple,live_parallel,live_parallel_multiple,live_irrelevance,live_relevance,multi_turn_base,multi_turn_miss_func,multi_turn_miss_param,multi_turn_long_context,memory_kv,memory_rec_sum,web_search_base,web_search_no_snippet,format_sensitivity"
+# （web_search_base / web_search_no_snippet 走 SerpAPI，worker 节点连不上 serpapi.com）
+TEST_CATEGORIES="simple_python,simple_java,simple_javascript,multiple,parallel,parallel_multiple,irrelevance,live_simple,live_multiple,live_parallel,live_parallel_multiple,live_irrelevance,live_relevance,multi_turn_base,multi_turn_miss_func,multi_turn_miss_param,multi_turn_long_context,memory_kv,memory_rec_sum,format_sensitivity"
 
 
 run_eval() {
@@ -104,6 +104,8 @@ if isinstance(v, list):
 # run_eval "qwen3-4b-sft-4dataset-merged-FC"            "$MODEL_PATH_BASE/4dataset-merged-20260420"
 # run_eval "qwen3-4b-sft-helpfulness-stepfun-0421-FC"   "$MODEL_PATH_BASE/helpfulness-stepfun-0421"
 # run_eval "qwen3-4b-sft-helpfulness-only-FC"           "$MODEL_PATH_BASE/helpfulness-only-20260416"
-run_eval "qwen3-4b-sft-helpfulness-4dataset-0421-FC"  "$MODEL_PATH_BASE/helpfulness-4dataset-0421"
+# run_eval "qwen3-4b-sft-helpfulness-4dataset-0421-FC"  "$MODEL_PATH_BASE/helpfulness-4dataset-0421"
+run_eval "qwen3-4b-sft-helpfulness-4dataset-0422-FC"  "$MODEL_PATH_BASE/helpfulness-4dataset-0422"
+run_eval "qwen3-4b-sft-helpfulness-stepfun-0422-FC"   "$MODEL_PATH_BASE/helpfulness-stepfun-0422"
 
 echo "All done! Results in $BFCL_PROJECT_ROOT/score/"
