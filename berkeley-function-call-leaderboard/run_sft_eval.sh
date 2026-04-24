@@ -105,7 +105,8 @@ if isinstance(v, list):
 # run_eval "qwen3-4b-sft-helpfulness-stepfun-0421-FC"   "$MODEL_PATH_BASE/helpfulness-stepfun-0421"
 # run_eval "qwen3-4b-sft-helpfulness-only-FC"           "$MODEL_PATH_BASE/helpfulness-only-20260416"
 # run_eval "qwen3-4b-sft-helpfulness-4dataset-0421-FC"  "$MODEL_PATH_BASE/helpfulness-4dataset-0421"
-run_eval "qwen3-4b-sft-helpfulness-4dataset-0422-FC"  "$MODEL_PATH_BASE/helpfulness-4dataset-0422"
-run_eval "qwen3-4b-sft-helpfulness-stepfun-0422-FC"   "$MODEL_PATH_BASE/helpfulness-stepfun-0422"
+# run_eval "qwen3-4b-sft-helpfulness-4dataset-0422-FC"  "$MODEL_PATH_BASE/helpfulness-4dataset-0422"
+# run_eval "qwen3-4b-sft-helpfulness-stepfun-0422-FC"   "$MODEL_PATH_BASE/helpfulness-stepfun-0422"
+run_eval "qwen3-4b-sft-helpfulness-4dataset-0424-FC"  "$MODEL_PATH_BASE/helpfulness-4dataset-0424"
 
 echo "All done! Results in $BFCL_PROJECT_ROOT/score/"

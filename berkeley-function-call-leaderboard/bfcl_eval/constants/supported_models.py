@@ -206,5 +206,7 @@ SUPPORTED_MODELS = [
     "qwen3-4b-sft-helpfulness-stepfun-0422",
     "qwen3-4b-sft-helpfulness-4dataset-0422-FC",
     "qwen3-4b-sft-helpfulness-4dataset-0422",
+    "qwen3-4b-sft-helpfulness-4dataset-0424-FC",
+    "qwen3-4b-sft-helpfulness-4dataset-0424",
     "DM-Cito-32B-v1",
 ]
